@@ -25,17 +25,27 @@ type Phase = 'quiz' | 'locked' | 'result' | 'friend';
 
 const CATEGORY_ORDER: CityCategory[] = ['settle', 'sojourn', 'solo', 'exchange'];
 const MAX_USES = 2;
-const STORAGE_KEY_USED = 'fatecity_used';
+const STORAGE_KEY_USED = 'fatecity_credits';
+const VALID_CODES = ['FATE2025', 'CITY888', 'MINGYUN'];
 
-function getUsedCount(): number {
-  if (typeof window === 'undefined') return 0;
-  return parseInt(localStorage.getItem(STORAGE_KEY_USED) || '0', 10);
+function getCredits(): number {
+  if (typeof window === 'undefined') return 1;
+  const v = parseInt(localStorage.getItem(STORAGE_KEY_USED) || '1', 10);
+  return isNaN(v) ? 1 : v;
 }
 
-function incrementUsed(): number {
-  const next = getUsedCount() + 1;
-  localStorage.setItem(STORAGE_KEY_USED, String(next));
-  return next;
+function setCredits(n: number) {
+  localStorage.setItem(STORAGE_KEY_USED, String(n));
+}
+
+function useCredit(): number {
+  const c = getCredits() - 1;
+  setCredits(Math.max(0, c));
+  return Math.max(0, c);
+}
+
+function addCredit() {
+  setCredits(getCredits() + 1);
 }
 
 // ======================== Main Component ========================
@@ -48,7 +58,8 @@ export default function QuizPage() {
   const [friendMode, setFriendMode] = useState(false);
   const [friendResult, setFriendResult] = useState<QuizResult | null>(null);
   const [friendMatch, setFriendMatch] = useState<FriendMatchResult | null>(null);
-  const [usedCount, setUsedCount] = useState(0);
+  const [credits, setCreditsState] = useState(1);
+  const [invited, setInvited] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
   const shareCardRef = useRef<HTMLDivElement>(null);
 
@@ -56,11 +67,11 @@ export default function QuizPage() {
   const allAnswered = answeredCount === QUESTIONS.length;
   const progress = Math.round((answeredCount / QUESTIONS.length) * 100);
 
-  // Check usage on mount
+  // Check credits on mount
   useEffect(() => {
-    const count = getUsedCount();
-    setUsedCount(count);
-    if (count >= MAX_USES) {
+    const c = getCredits();
+    setCreditsState(c);
+    if (c <= 0) {
       setPhase('locked');
       return;
     }
@@ -75,21 +86,54 @@ export default function QuizPage() {
     setAnswers((prev) => ({ ...prev, [questionId]: index }));
   }, []);
 
-  // Complete quiz → direct result
+  // Complete quiz → use 1 credit
   const handleComplete = () => {
     if (!allAnswered) return;
+    if (credits <= 0) {
+      setPhase('locked');
+      return;
+    }
     const matched = matchCities(answers);
     setResult(matched);
     saveResult(matched);
-    const newCount = incrementUsed();
-    setUsedCount(newCount);
+    const remaining = useCredit();
+    setCreditsState(remaining);
     setPhase('result');
     setTimeout(() => {
       resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
   };
 
-  // Share
+  // Invite friend → +1 credit
+  const handleInviteFriend = () => {
+    addCredit();
+    setCreditsState((c) => c + 1);
+    setInvited(true);
+    const shareText = '🌍 我刚测了命定城市，发现我的城市人格超准！\n64座城市·8种人格·20道题\n你也来测测？ https://fatecity.cn';
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(shareText).then(() => {
+        alert('✅ 链接已复制！发给朋友吧～你已获得 +1 次免费测试！');
+      }).catch(() => alert(shareText));
+    }
+  };
+
+  // Unlock code
+  const handleUnlockCode = () => {
+    const code = prompt('请输入在小红书购买的解锁码：');
+    if (!code) return;
+    if (VALID_CODES.includes(code.toUpperCase().trim())) {
+      setCredits(999);
+      setCreditsState(999);
+      setPhase('quiz');
+      setAnswers({});
+      setResult(null);
+      alert('✅ 解锁成功！你现在可以无限次测试了！');
+    } else {
+      alert('❌ 解锁码无效，请确认后重试。如需购买请前往小红书搜索「命定城市」。');
+    }
+  };
+
+  // Share card
   const handleShare = () => {
     setShowShareCard(true);
   };
@@ -101,14 +145,11 @@ export default function QuizPage() {
     if (saved) setFriendResult(saved);
   };
 
-  const handleFriendTestComplete = () => {
-    if (!result || !friendResult) return;
-    const match = matchFriends(result, friendResult);
-    setFriendMatch(match);
-    setPhase('friend');
-  };
-
   const handleReset = () => {
+    if (credits <= 0) {
+      setPhase('locked');
+      return;
+    }
     setAnswers({});
     setResult(null);
     setPhase('quiz');
@@ -119,21 +160,19 @@ export default function QuizPage() {
     setFriendMatch(null);
     if (typeof window !== 'undefined') {
       localStorage.removeItem('fate_city_result');
-      localStorage.removeItem('fate_city_friend');
     }
   };
 
-  const remaining = MAX_USES - usedCount;
   const personality = result?.personality ?? null;
 
   return (
     <main className="fate-shell">
       {/* ===== Locked Screen ===== */}
-      {phase === 'locked' && <LockedScreen />}
+      {phase === 'locked' && <LockedScreen onUnlock={handleUnlockCode} />}
 
       {/* ===== Hero ===== */}
       {phase !== 'locked' && (
-        <HeroSection phase={phase} personality={personality} remaining={remaining} />
+        <HeroSection phase={phase} personality={personality} credits={credits} />
       )}
 
       {/* ===== Progress Bar ===== */}
@@ -164,7 +203,7 @@ export default function QuizPage() {
             onClick={handleComplete}
             disabled={!allAnswered}
           >
-            {allAnswered ? `✨ 查看我的城市人格（剩余 ${remaining} 次）` : `还差 ${QUESTIONS.length - answeredCount} 题`}
+            {allAnswered ? `✨ 查看我的城市人格（剩余 ${credits} 次）` : `还差 ${QUESTIONS.length - answeredCount} 题`}
           </button>
           {answeredCount > 0 && (
             <button className="fate-btn ghost" onClick={handleReset}>
@@ -187,7 +226,9 @@ export default function QuizPage() {
           onReset={handleReset}
           shareCardRef={shareCardRef}
           resultRef={resultRef}
-          remaining={remaining}
+          credits={credits}
+          invited={invited}
+          onInviteFriend={handleInviteFriend}
         />
       )}
 
@@ -198,7 +239,7 @@ export default function QuizPage() {
           friendResult={friendResult}
           setFriendResult={setFriendResult}
           friendMatch={friendMatch}
-          onComplete={handleFriendTestComplete}
+          onComplete={() => {}}
           onClose={() => { setFriendMode(false); setPhase('result'); }}
         />
       )}
@@ -218,7 +259,7 @@ export default function QuizPage() {
 
 // ======================== Sub-Components ========================
 
-function HeroSection({ phase, personality, remaining }: { phase: Phase; personality: QuizResult['personality'] | null; remaining?: number }) {
+function HeroSection({ phase, personality, credits }: { phase: Phase; personality: QuizResult['personality'] | null; credits?: number }) {
   if (phase === 'quiz') {
     return (
       <section className="fate-hero">
@@ -236,7 +277,7 @@ function HeroSection({ phase, personality, remaining }: { phase: Phase; personal
           <div className="fate-hero-stats">
             <div className="hero-stat"><strong>64</strong><span>全球城市</span></div>
             <div className="hero-stat"><strong>8</strong><span>人格类型</span></div>
-            <div className="hero-stat"><strong>{remaining ?? 2}次</strong><span>免费测试</span></div>
+            <div className="hero-stat"><strong>{(credits ?? 1) > 99 ? '∞' : (credits ?? 1)}次</strong><span>剩余次数</span></div>
           </div>
         </div>
         <div className="fate-hero-visual">
@@ -344,7 +385,7 @@ function QuestionCard({
 
 
 // ======================== Locked Screen ========================
-function LockedScreen() {
+function LockedScreen({ onUnlock }: { onUnlock: () => void }) {
   const handleCopy = async () => {
     const shareText = '\ud83c\udf0d \u6211\u521a\u6d4b\u4e86\u547d\u5b9a\u57ce\u5e02\uff0c\u53d1\u73b0\u6211\u7684\u57ce\u5e02\u4eba\u683c\u8d85\u51c6\uff01\n64\u5ea7\u57ce\u5e02\u00b78\u79cd\u4eba\u683c\u00b720\u9053\u9898\n\u4f60\u4e5f\u6765\u6d4b\u6d4b\uff1f https://fatecity.cn';
     try {
@@ -366,9 +407,13 @@ function LockedScreen() {
           </p>
           <div className="fate-locked-box">
             <p className="locked-red-title">\ud83d\udcd5 \u5c0f\u7ea2\u4e66\u641c\uff1a<span>\u547d\u5b9a\u57ce\u5e02</span></p>
-            <p className="locked-red-desc">\u9650\u65f6\u4f18\u60e0\uff0c\u6d4b\u5b8c\u8fd8\u80fd\u548c\u597d\u53cb\u5339\u914d\u6700\u9002\u5408\u4e00\u8d77\u65c5\u884c\u7684\u57ce\u5e02</p>
-            <button className="fate-btn primary" onClick={handleCopy}>
-              \ud83d\udccb \u590d\u5236\u94fe\u63a5\u5206\u4eab\u7ed9\u670b\u53cb\uff08\u670b\u53cb\u53ef\u514d\u8d39\u6d4b 2 \u6b21\uff09
+            <p className="locked-red-desc">\u9650\u65f6\u4f18\u60e0\uff0c\u8d2d\u4e70\u540e\u83b7\u5f97\u89e3\u9501\u7801\uff0c\u5373\u53ef\u65e0\u9650\u6b21\u6d4b\u8bd5</p>
+            <button className="fate-btn primary" onClick={onUnlock} style={{ marginBottom: 12 }}>
+              \ud83d\udd11 \u8f93\u5165\u89e3\u9501\u7801
+            </button>
+            <br />
+            <button className="fate-btn secondary" onClick={handleCopy}>
+              \ud83d\udccb \u590d\u5236\u94fe\u63a5\u5206\u4eab\u7ed9\u670b\u53cb
             </button>
           </div>
         </div>
@@ -389,6 +434,9 @@ function FullResult({
   onStartFriendMatch,
   onReset,
   shareCardRef,
+  credits,
+  invited,
+  onInviteFriend,
   resultRef
 }: {
   result: QuizResult;
@@ -398,10 +446,12 @@ function FullResult({
   showShareCard: boolean;
   onShare: () => void;
   onStartFriendMatch: () => void;
-  remaining?: number;
   onReset: () => void;
   shareCardRef: React.Ref<HTMLDivElement>;
   resultRef: React.Ref<HTMLDivElement>;
+  credits: number;
+  invited: boolean;
+  onInviteFriend: () => void;
 }) {
   const { personality, distribution, topPicks, recommendations } = result;
   const summary = generateSummary(result);
@@ -459,14 +509,26 @@ function FullResult({
         </div>
       </section>
 
-      {/* Share card button */}
+      {/* Social + Invite */}
       <section className="fate-social-section">
+        {!invited && credits <= 1 && (
+          <div className="fate-share-cta" style={{ marginBottom: 16 }}>
+            <h3>🎁 邀请好友，再得一次免费测试</h3>
+            <p>复制链接发给朋友，你立即获得 +1 次测试机会</p>
+            <button className="fate-btn primary" onClick={onInviteFriend}>
+              📋 复制邀请链接（+1次）
+            </button>
+          </div>
+        )}
         <div className="fate-share-cta">
           <h3>📤 分享你的城市人格卡片</h3>
           <p>生成专属卡片发朋友圈，看看朋友是什么人格</p>
-          <button className="fate-btn primary" onClick={onShare}>
+          <button className="fate-btn secondary" onClick={onShare}>
             生成分享卡片
           </button>
+          <p style={{ marginTop: 10, fontSize: '0.82rem', color: 'var(--muted)' }}>
+            🔔 剩余测试次数：<strong>{credits > 99 ? '∞' : credits}</strong>
+          </p>
         </div>
       </section>
 
