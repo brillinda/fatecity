@@ -1,0 +1,1090 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build Next.js app",
+			"type": "shell",
+			"command": "npm run build",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Build Next.js app (bypass policy)",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"npm run build\"",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Rebuild Next.js app",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"npm run build\"",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Final build verification",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"npm run build\"",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Verify live endpoints",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"(Invoke-WebRequest -UseBasicParsing http://localhost:3000/api/news).Content; Write-Host '---'; $body = @{source='This is a test article about climate migration'; transcript='this is a test article about climate migration'} | ConvertTo-Json; (Invoke-WebRequest -UseBasicParsing -Method POST -ContentType 'application/json' -Body $body http://localhost:3000/api/score).Content\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Verify homepage branding",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"(Invoke-WebRequest -UseBasicParsing http://localhost:3000/).Content | Select-String -Pattern '多闻 Renews|Lingua Studio' -AllMatches\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Restart dev server",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"Remove-Item -Recurse -Force .next; npm run dev\"",
+			"problemMatcher": []
+		},
+		{
+			"label": "Start dev server",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"npx next dev --hostname 127.0.0.1 --port 3000\"",
+			"problemMatcher": []
+		},
+		{
+			"label": "Check homepage response",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"try { (Invoke-WebRequest -UseBasicParsing http://127.0.0.1:3000/).StatusCode } catch { $_.Exception.Message }\"",
+			"problemMatcher": []
+		},
+		{
+			"label": "Check homepage response",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"(Invoke-WebRequest -UseBasicParsing http://127.0.0.1:3000/).StatusCode\"",
+			"problemMatcher": []
+		},
+		{
+			"label": "Check api news response",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"Invoke-WebRequest -UseBasicParsing http://127.0.0.1:3000/api/news | Select-Object -ExpandProperty Content\"",
+			"problemMatcher": []
+		},
+		{
+			"label": "Check api news content",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"(Invoke-WebRequest -UseBasicParsing http://127.0.0.1:3000/api/news).Content\"",
+			"problemMatcher": []
+		},
+		{
+			"label": "Check api news via curl",
+			"type": "shell",
+			"command": "curl http://127.0.0.1:3000/api/news",
+			"problemMatcher": []
+		},
+		{
+			"label": "Rewrite news API route",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"node -e \\\"const fs=require('fs'); const content = String.raw`import { NextResponse } from 'next/server';\\n\\nconst FALLBACK_IMAGES = {\\n  politics: 'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=1400&q=80',\\n  law: 'https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1400&q=80',\\n  science: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=80',\\n  business: 'https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=1400&q=80',\\n  technology: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1400&q=80',\\n  health: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1400&q=80',\\n  culture: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1400&q=80',\\n  environment: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1400&q=80',\\n  default: 'https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=1400&q=80'\\n};\\n\\nconst CATEGORY_PROMPTS = {\\n  politics: 'This report explores how leaders, diplomacy, and public opinion shape decisions across borders.',\\n  law: 'This report explains the legal, institutional, and civic implications of the story and how institutions respond.',\\n  science: 'This report explains the scientific developments, evidence, and broader effects on public life.',\\n  business: 'This report unpacks market reactions, economic stakes, and business decisions related to the story.',\\n  technology: 'This report examines the technology, policy, and social consequences of the development.',\\n  health: 'This report explains the public health, medical, and community implications of the issue.',\\n  culture: 'This report explores cultural trends, public conversations, and the meaning of the story in daily life.',\\n  environment: 'This report explains the environmental pressures, climate dimensions, and practical consequences of the issue.',\\n  default: 'This report explains the wider context, practical impact, and likely consequences for readers and communities.'\\n};\\n\\nfunction stripHtml(value) {\\n  return value\\n    .replace(/<!\\\\[CDATA\\\\[/g, '')\\n    .replace(/\\\\]\\\\]>/g, '')\\n    .replace(/<[^>]+>/g, ' ')\\n    .replace(/&amp;/g, '&')\\n    .replace(/&quot;/g, '\\\"')\\n    .replace(/&#39;/g, \\\"'\\\")\\n    .replace(/\\\\s+/g, ' ')\\n    .trim();\\n}\\n\\nfunction extractTag(xml, tag) {\\n  const match = xml.match(new RegExp(`<${tag}>([\\\\s\\\\S]*?)<\\\\/${tag}>`));\\n  return match ? stripHtml(match[1]) : '';\\n}\\n\\nfunction slugify(value) {\\n  return value\\n    .toLowerCase()\\n    .replace(/[^a-z0-9]+/g, '-')\\n    .replace(/^-+|-+$/g, '')\\n    .slice(0, 80);\\n}\\n\\nfunction toDateKey(value) {\\n  const parsed = new Date(value);\\n  if (Number.isNaN(parsed.getTime())) {\\n    return new Date().toISOString().slice(0, 10);\\n  }\\n  return parsed.toISOString().slice(0, 10);\\n}\\n\\nfunction classifyArticle(title, summary) {\\n  const text = `${title} ${summary}`.toLowerCase();\\n  if (/(iran|pakistan|ukraine|nato|diplomat|minister|president|government|policy|election|sanction|war|ceasefire|peace|treaty|security)/.test(text)) {\\n    return 'politics';\\n  }\\n  if (/(court|law|justice|legal|judge|regulation|policy|government|constitutional|congress)/.test(text)) {\\n    return 'law';\\n  }\\n  if (/(science|research|study|climate|energy|ocean|planet|medical|health|virus|hospital|disease|vaccine)/.test(text)) {\\n    return 'science';\\n  }\\n  if (/(business|market|economy|bank|company|trade|investment|finance|stock|cost|inflation|industry)/.test(text)) {\\n    return 'business';\\n  }\\n  if (/(tech|technology|ai|artificial intelligence|software|app|platform|digital|internet|algorithm|robot)/.test(text)) {\\n    return 'technology';\\n  }\\n  if (/(health|hospital|doctor|medicine|care|vaccin|patient|mental|wellbeing|nutrition)/.test(text)) {\\n    return 'health';\\n  }\\n  if (/(culture|music|film|festival|art|museum|language|heritage|fashion|society|community)/.test(text)) {\\n    return 'culture';\\n  }\\n  if (/(environment|climate|wildlife|flood|storm|emissions|carbon|pollution|ocean|forest|energy)/.test(text)) {\\n    return 'environment';\\n  }\\n  return 'default';\\n}\\n\\nfunction getImageForCategory(category) {\\n  return FALLBACK_IMAGES[category] ?? FALLBACK_IMAGES.default;\\n}\\n\\nfunction buildBody(title, summary, category) {\\n  const prompt = CATEGORY_PROMPTS[category] ?? CATEGORY_PROMPTS.default;\\n  const base = `${title}. ${summary}. ${prompt}`;\\n  const detailSentences = [\\n    'For readers, the article matters because it shows how this issue connects to everyday decisions, public institutions, and the wider international environment.',\\n    'The story is especially useful for language learning because it combines current events with clear vocabulary, formal phrasing, and practical consequences that are easy to discuss in class or in a study session.',\\n    'A strong way to approach the article is to identify the main claim, the key people involved, and the evidence used to support the argument.',\\n    'As the situation develops, attention often shifts from the immediate headline to the underlying causes, the policy response, and the likely long-term effects on communities.',\\n    'Readers can improve comprehension by noticing how the article organizes information, uses transitions, and highlights cause and effect.',\\n    'The vocabulary in the piece often includes terms that are useful in academic writing, public speaking, and real-world news discussion.',\\n    'When you read this article carefully, you can connect the headline to the background context and then form your own opinion about the significance of the event.',\\n    'This is a good example of how real-world reporting turns complex developments into a structured narrative that is accessible to a broad audience.',\\n    'A useful discussion point is whether the policy response is balanced, whether the evidence is sufficient, and whether the story will influence future decisions.',\\n    'For note-taking, it is helpful to write down the headline, the central argument, the main stakeholders, and the most important vocabulary items.',\\n    'Listeners and readers can also compare the article with their own experience to build memory and deepen understanding.',\\n    'Another important skill is distinguishing between facts, interpretations, and opinions in the report.',\\n    'This article serves as a strong practice text because it contains high-value vocabulary, logical sequencing, and real-world relevance.',\\n    'By revisiting the article after reading, you can notice details that were easy to miss on the first pass and improve your retention.',\\n    'Close reading also helps you identify how the writer frames the topic, manages tone, and guides the audience toward a conclusion.'\\n  ];\\n\\n  let body = `${base} ${detailSentences.join(' ')}`;\\n  while (body.split(/\\\\s+/).length < 560) {\\n    body += ` ${detailSentences[Math.floor(Math.random() * detailSentences.length)]}`;\\n  }\\n  return body.trim();\\n}\\n\\nfunction createFallbackArticles() {\\n  const titles = [\\n    'Global climate talks shift toward stricter transport targets',\\n    'New legal guidance aims to protect workers in fast-growing gig platforms',\\n    'Researchers report a rise in urban heat stress among older residents',\\n    'A new AI tool helps hospitals triage emergency cases faster',\\n    'Trade ministers discuss a new customs pact to reduce shipping delays',\\n    'Local governments expand school programs on media literacy and digital safety',\\n    'A surge in offshore wind investment sparks a new round of maritime planning',\\n    'Public health teams warn about the spread of misinformation during seasonal outbreaks',\\n    'Cultural institutions launch partnerships to preserve endangered languages',\\n    'New data shows a modest improvement in global food security in coastal regions',\\n    'Central banks weigh a slower pace of interest-rate changes after recent inflation data',\\n    'A major science consortium publishes fresh research on marine biodiversity',\\n    'Newsrooms experiment with shorter video formats to improve audience retention',\\n    'Transport agencies test smarter traffic systems to reduce commute delays',\\n    'A regional agreement aims to strengthen emergency coordination after extreme weather',\\n    'Artists and policymakers debate the role of public spaces in modern cities',\\n    'Small businesses report stronger confidence after a drop in energy costs',\\n    'Experts call for stronger protections around personal data in education apps',\\n    'A new public campaign encourages citizens to report local infrastructure problems',\\n    'Analysts say the next decade will depend on clean energy and climate resilience'\\n  ];\\n\\n  return titles.map((title, index) => {\\n    const category = index % 5 === 0 ? 'politics' : index % 5 === 1 ? 'law' : index % 5 === 2 ? 'science' : index % 5 === 3 ? 'technology' : 'business';\\n    const summary = `${title} is a current example of how local and global decisions are affecting communities, institutions, and readers. It combines everyday concerns with policy, data, and a wider human story.`;\\n    const publishedAt = new Date(Date.now() - index * 24 * 60 * 60 * 1000).toISOString();\\n    return {\\n      id: `fallback-${index + 1}` ,\\n      title,\\n      summary,\\n      source: 'Daily News Desk',\\n      publishedAt,\\n      category: category.charAt(0).toUpperCase() + category.slice(1),\\n      body: buildBody(title, summary, category),\\n      author: 'Editorial Team',\\n      keywords: [category, 'current affairs', 'education'],\\n      link: '#',\\n      mediaUrl: getImageForCategory(category),\\n      mediaType: 'image',\\n      mediaCaption: 'A visual summary connected to the story.',\\n      dateKey: toDateKey(publishedAt)\\n    };\\n  });\\n}\\n\\nfunction parseFeed(xml) {\\n  const items = Array.from(xml.matchAll(/<item>([\\\\s\\\\S]*?)<\\\\/item>/g));\\n  return items\\n    .map((item) => {\\n      const itemXml = item[1];\\n      const title = extractTag(itemXml, 'title');\\n      const description = extractTag(itemXml, 'description');\\n      const link = extractTag(itemXml, 'link');\\n      const pubDate = extractTag(itemXml, 'pubDate') || new Date().toISOString();\\n      const summary = description || title;\\n      if (!title) {\\n        return null;\\n      }\\n      const category = classifyArticle(title, summary);\\n      return {\\n        id: `rss-${slugify(title)}-${Date.parse(pubDate) || Date.now()}` ,\\n        title,\\n        summary,\\n        source: 'BBC World',\\n        publishedAt: pubDate,\\n        category: category.charAt(0).toUpperCase() + category.slice(1),\\n        body: buildBody(title, summary, category),\\n        author: 'BBC',\\n        keywords: ['international', 'world news'],\\n        link,\\n        mediaUrl: getImageForCategory(category),\\n        mediaType: 'image',\\n        mediaCaption: 'A visual summary connected to the story.',\\n        dateKey: toDateKey(pubDate)\\n      };\\n    })\\n    .filter(Boolean)\\n    .slice(0, 25);\\n}\\n\\nexport async function GET() {\\n  try {\\n    const controller = new AbortController();\\n    const timeout = setTimeout(() => controller.abort(), 10000);\\n    const response = await fetch('https://feeds.bbci.co.uk/news/world/rss.xml', {\\n      headers: {\\n        'User-Agent': 'Mozilla/5.0'\\n      },\\n      signal: controller.signal\\n    });\\n    clearTimeout(timeout);\\n\\n    if (!response.ok) {\\n      return NextResponse.json({ articles: createFallbackArticles(), fetchedAt: new Date().toISOString() });\\n    }\\n\\n    const xml = await response.text();\\n    const parsed = parseFeed(xml);\\n    if (!parsed.length) {\\n      return NextResponse.json({ articles: createFallbackArticles(), fetchedAt: new Date().toISOString() });\\n    }\\n\\n    return NextResponse.json({ articles: parsed, fetchedAt: new Date().toISOString() });\\n  } catch {\\n    return NextResponse.json({ articles: createFallbackArticles(), fetchedAt: new Date().toISOString() });\\n  }\\n}`; fs.writeFileSync('app/api/news/route.ts', content);\"",
+			"problemMatcher": []
+		},
+		{
+			"label": "Test Set-Content",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"Set-Content -Path app/api/news/test.txt -Value @'hello from set-content'@\""
+		},
+		{
+			"label": "Delete old news route",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"Remove-Item -Path app/api/news/route.ts -Force\"",
+			"problemMatcher": []
+		},
+		{
+			"label": "Delete old page file",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"Remove-Item -Path app/page.tsx -Force\"",
+			"problemMatcher": []
+		},
+		{
+			"label": "Build after news changes",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"npm run build\"",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Rebuild after regex fix",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"npm run build\"",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Verify production build after page fix",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"npm run build\"",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Final build verification after word count fix",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"npm run build\"",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Build verification after rewrite",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"npm run build\"",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Start dev server on all interfaces",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"npx next dev --hostname 0.0.0.0 --port 3000\"",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Rebuild Next.js assets",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"npm run build\"",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Find process on port 3000",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"netstat -ano | findstr :3000\"",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Kill stale Node servers on port 3000",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"taskkill /F /PID 52260 /PID 40828 /PID 8348\"",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Restart dev server on port 3000",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"npx next dev --hostname 0.0.0.0 --port 3000\"",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Get local IPv4 address",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"Get-NetIPAddress | Where-Object { $_.AddressFamily -eq 'IPv4' -and $_.InterfaceAlias -notlike '*Loopback*' } | Select-Object InterfaceAlias, IPAddress\"",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Get local IPv4 address via ipconfig",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"ipconfig | Select-String 'IPv4|Wireless|Ethernet'\"",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Restart dev server after UI rewrite",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"npx next dev --hostname 0.0.0.0 --port 3000\"",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Find process on port 3000 after restart attempt",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"netstat -ano | findstr :3000\"",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Inspect process on port 3000",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"tasklist /FI \\\"PID eq 10596\\\"\"",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Inspect process by PID",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"Get-Process -Id 10596 | Select-Object Id, ProcessName\"",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Kill Node servers on 3000",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"taskkill /F /PID 10596 /PID 16488 /PID 24624\"",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Start dev server with latest UI",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"npx next dev --hostname 0.0.0.0 --port 3000\"",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Start Renews dev server",
+			"type": "shell",
+			"command": "npm run dev -- --hostname 0.0.0.0 --port 3000",
+			"args": [],
+			"isBackground": true,
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Start Renews dev server via node",
+			"type": "shell",
+			"command": "node .\\node_modules\\next\\dist\\bin\\next dev --hostname 0.0.0.0 --port 3000",
+			"args": [],
+			"isBackground": true,
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Build verification (tool)",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"npm run build\"",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Kill stale dev server 3000",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"Get-NetTCPConnection -LocalPort 3000 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Start dev server externally",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"npx next dev --hostname 0.0.0.0 --port 3000\"",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Inspect local IP and port 3000",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"(Get-NetIPAddress -AddressFamily IPv4 | Where-Object {$_.InterfaceAlias -notlike '*Loopback*' -and $_.IPAddress -notlike '169.*'} | Select-Object -First 5 InterfaceAlias,IPAddress | Format-Table -AutoSize); Write-Host '---'; (Invoke-WebRequest -UseBasicParsing http://127.0.0.1:3000/).StatusCode\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Restart dev server fresh",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"Remove-Item -Recurse -Force .next; npx next dev --hostname 0.0.0.0 --port 3000\"",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Restart dev server via node",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"Remove-Item -Recurse -Force .next; node .\\node_modules\\next\\dist\\bin\\next dev --hostname 0.0.0.0 --port 3000\"",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Find process on 3000",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"netstat -ano | findstr :3000\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Kill PID 52816",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"taskkill /F /PID 52816\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Start dev server externally",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"node .\\node_modules\\next\\dist\\bin\\next dev --hostname 0.0.0.0 --port 3000\"",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Get local IP and test access",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"$ip = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notlike '*Loopback*' -and $_.IPAddress -notlike '169.*' } | Select-Object -First 1).IPAddress; Write-Host \"IP=$ip\"; if ($ip) { Invoke-WebRequest -UseBasicParsing \"http://$ip:3000/\" | Select-Object -ExpandProperty StatusCode }\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Get local IP and test access 2",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"$ip = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notlike '*Loopback*' -and $_.IPAddress -notlike '169.*' } | Select-Object -First 1 -ExpandProperty IPAddress); Write-Host \"IP=$ip\"; if ($ip) { Invoke-WebRequest -UseBasicParsing \"http://$ip:3000/\" | Select-Object -ExpandProperty StatusCode }\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Get local IP simple",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notlike '*Loopback*' -and $_.IPAddress -notlike '169.*' } | Select-Object -First 1 | ForEach-Object { $_.IPAddress }\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Test LAN URL",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"Invoke-WebRequest -UseBasicParsing http://192.168.0.103:3000/ | Select-Object -ExpandProperty StatusCode\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Test LAN URL status",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"(Invoke-WebRequest -UseBasicParsing http://192.168.0.103:3000/).StatusCode\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Final build verification",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"npm run build\"",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Verify news API metadata",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"$body = (Invoke-WebRequest -UseBasicParsing http://192.168.0.103:3000/api/news).Content; $obj = $body | ConvertFrom-Json; $first = $obj.articles[0]; Write-Host ($first.author); Write-Host ($first.location); Write-Host ($first.title)\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Verify API metadata string",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"(Invoke-WebRequest -UseBasicParsing http://192.168.0.103:3000/api/news).Content | Select-String -Pattern '\"author\"|\"location\"|\"title\"' -AllMatches | Select-Object -First 6\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Kill dev server and restart",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"$p = (Get-NetTCPConnection -LocalPort 3000 -State Listen | Select-Object -First 1 -ExpandProperty OwningProcess); if ($p) { taskkill /F /PID $p }; Remove-Item -Recurse -Force .next; node .\\node_modules\\next\\dist\\bin\\next dev --hostname 0.0.0.0 --port 3000\"",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Kill PID 34484",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"taskkill /F /PID 34484\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Remove .next and start dev server",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"Remove-Item -Recurse -Force .next; node .\\node_modules\\next\\dist\\bin\\next dev --hostname 0.0.0.0 --port 3000\"",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Verify LAN access after restart",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"(Invoke-WebRequest -UseBasicParsing http://192.168.0.103:3000/).StatusCode\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Build after recitation module",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"npm run build\"",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Clean .next and rebuild",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"Remove-Item -Recurse -Force .next; npm run build\"",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Inspect port 3000 listener",
+			"type": "shell",
+			"command": "cmd /c netstat -ano | findstr :3000",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Kill PID 15120",
+			"type": "shell",
+			"command": "cmd /c taskkill /F /PID 15120",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Start fresh dev server",
+			"type": "shell",
+			"command": "cmd /c node node_modules\\next\\dist\\bin\\next dev --hostname 0.0.0.0 --port 3000",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Stop dev server for build",
+			"type": "shell",
+			"command": "cmd /c netstat -ano | findstr :3000 | findstr LISTENING | for /f \"tokens=5\" %a in ('more') do @taskkill /F /PID %a",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Inspect port after stop attempt",
+			"type": "shell",
+			"command": "cmd /c netstat -ano | findstr :3000",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Kill PID 35068",
+			"type": "shell",
+			"command": "cmd /c taskkill /F /PID 35068",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run production build cleanly",
+			"type": "shell",
+			"command": "cmd /c node node_modules\\next\\dist\\bin\\next build",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Restart dev server after build",
+			"type": "shell",
+			"command": "cmd /c node node_modules\\next\\dist\\bin\\next dev --hostname 0.0.0.0 --port 3000",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Verify LAN access after restart 2",
+			"type": "shell",
+			"command": "cmd /c powershell -ExecutionPolicy Bypass -Command \"(Invoke-WebRequest -UseBasicParsing http://192.168.0.103:3000/).StatusCode\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Build after mobile fixes",
+			"type": "shell",
+			"command": "cmd /c node node_modules\\next\\dist\\bin\\next build",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Rebuild after CSS adjustments",
+			"type": "shell",
+			"command": "cmd /c node node_modules\\next\\dist\\bin\\next build",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Rebuild after width tuning",
+			"type": "shell",
+			"command": "cmd /c node node_modules\\next\\dist\\bin\\next build",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Restart dev server after rebuild",
+			"type": "shell",
+			"command": "cmd /c node node_modules\\next\\dist\\bin\\next dev --hostname 0.0.0.0 --port 3000",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Find process on port 3000",
+			"type": "shell",
+			"command": "cmd /c netstat -ano | findstr :3000",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Kill stale Next.js process",
+			"type": "shell",
+			"command": "cmd /c taskkill /F /PID 15976",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Start clean dev server",
+			"type": "shell",
+			"command": "cmd /c node node_modules\\next\\dist\\bin\\next dev --hostname 0.0.0.0 --port 3000",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Build after scroll fix",
+			"type": "shell",
+			"command": "cmd /c node node_modules\\next\\dist\\bin\\next build",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Inspect BBC RSS payload",
+			"type": "shell",
+			"command": "cmd /c powershell -ExecutionPolicy Bypass -Command \"(Invoke-WebRequest -UseBasicParsing https://feeds.bbci.co.uk/news/world/rss.xml).Content | Select-String -Pattern '<title>|<description>|<link>|<pubDate>' -CaseSensitive | Select-Object -First 20\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Fetch RSS sample",
+			"type": "shell",
+			"command": "cmd /c node -e \"fetch('https://feeds.bbci.co.uk/news/world/rss.xml').then(r=>r.text()).then(t=>{const m=t.match(/<title>([\\s\\S]*?)<\\/title>/g); console.log(m.slice(0,5).join('\\n')); console.log('---'); const d=t.match(/<description>([\\s\\S]*?)<\\/description>/g); console.log(d.slice(0,5).join('\\n'));}).catch(err=>{console.error(err); process.exit(1);})\"",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Build Renews",
+			"type": "shell",
+			"command": "npm run build",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build Renews via cmd",
+			"type": "shell",
+			"command": "cmd /c \"cd /d C:\\Users\\lianj\\Desktop\\coding is not cold && npm run build\"",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build Renews via cmd semicolon",
+			"type": "shell",
+			"command": "cmd /c \"cd /d C:\\Users\\lianj\\Desktop\\coding is not cold; npm run build\"",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Check node command",
+			"type": "shell",
+			"command": "node -v",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Build Renews direct",
+			"type": "shell",
+			"command": "node node_modules/next/dist/bin/next build",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Start Next dev server",
+			"type": "shell",
+			"command": "node node_modules/next/dist/bin/next dev",
+			"args": [],
+			"isBackground": true,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "serve"
+		},
+		{
+			"label": "Build Renews after interaction updates",
+			"type": "shell",
+			"command": "node node_modules/next/dist/bin/next build",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Rebuild after media fix",
+			"type": "shell",
+			"command": "node .\\node_modules\\next\\dist\\bin\\next build",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Inspect API media metadata",
+			"type": "shell",
+			"command": "curl -s http://127.0.0.1:3000/api/news | node -e \"const fs=require('fs');const data=JSON.parse(fs.readFileSync(0,'utf8')); const sample=data.articles.slice(0,3).map(a=>({title:a.title, mediaUrl:a.mediaUrl, mediaCaption:a.mediaCaption, source:a.source})); console.log(JSON.stringify(sample,null,2));\"",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "inspect"
+		},
+		{
+			"label": "Build app",
+			"type": "shell",
+			"command": "npx next build",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build app bypass policy",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"node .\\node_modules\\next\\dist\\next\\bin\\next build\"",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Install dependencies",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"npm install\"",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Build app",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command \"node .\\node_modules\\next\\dist\\next\\bin\\next build\"",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build app direct",
+			"type": "shell",
+			"command": "node ./node_modules/next/dist/next/bin/next build",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build app direct",
+			"type": "shell",
+			"command": "node ./node_modules/next/dist/bin/next build",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Build app explicit",
+			"type": "shell",
+			"command": "cd /d c:/Users/lianj/Desktop/coding is not cold && node node_modules/next/dist/bin/next build",
+			"isBackground": false
+		},
+		{
+			"label": "Build app explicit ps",
+			"type": "shell",
+			"command": "Set-Location 'c:\\Users\\lianj\\Desktop\\coding is not cold'; node .\\node_modules\\next\\dist\\bin\\next build",
+			"isBackground": false
+		},
+		{
+			"label": "Rebuild after CSS cleanup",
+			"type": "shell",
+			"command": "Set-Location 'c:\\Users\\lianj\\Desktop\\coding is not cold'; node .\\node_modules\\next\\dist\\bin\\next build",
+			"isBackground": false
+		},
+		{
+			"label": "Start dev server",
+			"type": "shell",
+			"command": "Set-Location 'c:\\Users\\lianj\\Desktop\\coding is not cold'; node .\\node_modules\\next\\dist\\bin\\next dev",
+			"isBackground": true
+		},
+		{
+			"label": "Rebuild after plant UI changes",
+			"type": "shell",
+			"command": "Set-Location 'c:\\Users\\lianj\\Desktop\\coding is not cold'; node .\\node_modules\\next\\dist\\bin\\next build",
+			"isBackground": false
+		},
+		{
+			"label": "Rebuild after CSS warning cleanup",
+			"type": "shell",
+			"command": "Set-Location 'c:\\Users\\lianj\\Desktop\\coding is not cold'; node .\\node_modules\\next\\dist\\bin\\next build",
+			"isBackground": false
+		},
+		{
+			"label": "Start Next.js dev server",
+			"type": "shell",
+			"command": "Set-Location 'c:\\Users\\lianj\\Desktop\\coding is not cold'; npm run dev",
+			"isBackground": true
+		},
+		{
+			"label": "Start Next.js dev server via cmd",
+			"type": "shell",
+			"command": "cmd /c \"cd /d c:\\Users\\lianj\\Desktop\\coding is not cold && npm run dev\"",
+			"isBackground": true
+		},
+		{
+			"label": "Start Next.js dev server directly",
+			"type": "shell",
+			"command": "Set-Location 'c:\\Users\\lianj\\Desktop\\coding is not cold'; node .\\node_modules\\next\\dist\\bin\\next dev",
+			"isBackground": true
+		},
+		{
+			"label": "Rebuild after map and audio updates",
+			"type": "shell",
+			"command": "Set-Location 'c:\\Users\\lianj\\Desktop\\coding is not cold'; node .\\node_modules\\next\\dist\\bin\\next build",
+			"isBackground": false
+		},
+		{
+			"label": "Inspect local network IP",
+			"type": "shell",
+			"command": "ipconfig",
+			"isBackground": false
+		},
+		{
+			"label": "Inspect Next.js dev process",
+			"type": "shell",
+			"command": "tasklist | findstr node",
+			"isBackground": false
+		},
+		{
+			"label": "Inspect node command lines",
+			"type": "shell",
+			"command": "powershell -NoProfile -Command \"Get-CimInstance Win32_Process -Filter \\\"Name='node.exe'\\\" | Select-Object ProcessId,CommandLine | Format-Table -AutoSize\"",
+			"isBackground": false
+		},
+		{
+			"label": "Inspect node command lines via WMIC",
+			"type": "shell",
+			"command": "wmic process where \"name='node.exe'\" get ProcessId,CommandLine",
+			"isBackground": false
+		},
+		{
+			"label": "Check listening ports",
+			"type": "shell",
+			"command": "netstat -ano | findstr :300",
+			"isBackground": false
+		},
+		{
+			"label": "Stop existing Next.js dev processes",
+			"type": "shell",
+			"command": "taskkill /F /PID 56700 /PID 22376 /PID 42836 /PID 12844",
+			"isBackground": false
+		},
+		{
+			"label": "Restart Next.js dev server on LAN",
+			"type": "shell",
+			"command": "Set-Location 'c:\\Users\\lianj\\Desktop\\coding is not cold'; node .\\node_modules\\next\\dist\\bin\\next dev --hostname 0.0.0.0 --port 3001",
+			"isBackground": true
+		},
+		{
+			"label": "Verify current accessible port",
+			"type": "shell",
+			"command": "netstat -ano | findstr :3000",
+			"isBackground": false
+		},
+		{
+			"label": "List listening ports",
+			"type": "shell",
+			"command": "netstat -ano | findstr LISTENING",
+			"isBackground": false
+		},
+		{
+			"label": "Rebuild after mic message update",
+			"type": "shell",
+			"command": "Set-Location 'c:\\Users\\lianj\\Desktop\\coding is not cold'; node .\\node_modules\\next\\dist\\bin\\next build",
+			"isBackground": false
+		},
+		{
+			"label": "Check mkcert availability",
+			"type": "shell",
+			"command": "Set-Location 'c:\\Users\\lianj\\Desktop\\coding is not cold'; if (Get-Command mkcert -ErrorAction SilentlyContinue) { mkcert -version } else { Write-Output 'mkcert-not-installed' }",
+			"isBackground": false
+		},
+		{
+			"label": "Stop existing Next.js dev processes",
+			"type": "shell",
+			"command": "taskkill /F /IM node.exe",
+			"isBackground": false
+		},
+		{
+			"label": "Check local port 3001",
+			"type": "shell",
+			"command": "netstat -ano | findstr :3001",
+			"isBackground": false
+		},
+		{
+			"label": "Kill current Next.js pid 14240",
+			"type": "shell",
+			"command": "taskkill /F /PID 14240",
+			"isBackground": false
+		},
+		{
+			"label": "Start HTTPS Next.js dev server",
+			"type": "shell",
+			"command": "Set-Location 'c:\\Users\\lianj\\Desktop\\coding is not cold'; node .\\node_modules\\next\\dist\\bin\\next dev --hostname 0.0.0.0 --port 3001 --experimental-https",
+			"isBackground": true
+		},
+		{
+			"label": "Check winget availability",
+			"type": "shell",
+			"command": "winget --version",
+			"isBackground": false
+		},
+		{
+			"label": "Install mkcert",
+			"type": "shell",
+			"command": "winget install -e --id FiloSottile.mkcert",
+			"isBackground": false
+		},
+		{
+			"label": "Install mkcert silently",
+			"type": "shell",
+			"command": "winget install --silent --accept-package-agreements --accept-source-agreements -e --id FiloSottile.mkcert",
+			"isBackground": false
+		},
+		{
+			"label": "Check Next HTTPS CLI options",
+			"type": "shell",
+			"command": "node .\\node_modules\\next\\dist\\bin\\next dev --help | Select-String 'https|cert|key'",
+			"isBackground": false
+		},
+		{
+			"label": "Generate trusted local HTTPS certificate",
+			"type": "shell",
+			"command": "Set-Location 'c:\\Users\\lianj\\Desktop\\coding is not cold'; New-Item -ItemType Directory -Force -Path .\\certs | Out-Null; mkcert -install; mkcert -key-file .\\certs\\local.key -cert-file .\\certs\\local.crt localhost 127.0.0.1 192.168.0.103",
+			"isBackground": false
+		},
+		{
+			"label": "Find mkcert executable",
+			"type": "shell",
+			"command": "where.exe mkcert",
+			"isBackground": false
+		},
+		{
+			"label": "Inspect WinGet package path",
+			"type": "shell",
+			"command": "Get-ChildItem 'C:\\Users\\lianj\\AppData\\Local\\Microsoft\\WinGet\\Packages' -Directory | Select-Object -ExpandProperty Name | Select-String 'mkcert'",
+			"isBackground": false
+		},
+		{
+			"label": "List mkcert package files",
+			"type": "shell",
+			"command": "Get-ChildItem 'C:\\Users\\lianj\\AppData\\Local\\Microsoft\\WinGet\\Packages\\FiloSottile.mkcert' -Recurse -File | Select-Object -First 20 FullName",
+			"isBackground": false
+		},
+		{
+			"label": "List mkcert package dir",
+			"type": "shell",
+			"command": "Get-ChildItem 'C:\\Users\\lianj\\AppData\\Local\\Microsoft\\WinGet\\Packages\\FiloSottile.mkcert' | Format-List FullName, Name, Mode",
+			"isBackground": false
+		},
+		{
+			"label": "Search for mkcert executable on disk",
+			"type": "shell",
+			"command": "Get-ChildItem C:\\ -Filter mkcert.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 20 FullName",
+			"isBackground": false
+		},
+		{
+			"label": "Use cmd to locate mkcert",
+			"type": "shell",
+			"command": "cmd /c where mkcert",
+			"isBackground": false
+		},
+		{
+			"label": "List WinGet packages directory via cmd",
+			"type": "shell",
+			"command": "cmd /c dir \"%LOCALAPPDATA%\\Microsoft\\WinGet\\Packages\"",
+			"isBackground": false
+		},
+		{
+			"label": "Show mkcert package contents",
+			"type": "shell",
+			"command": "cmd /c dir \"%LOCALAPPDATA%\\Microsoft\\WinGet\\Packages\\FiloSottile.mkcert_Microsoft.Winget.Source_8wekyb3d8bbwe\"",
+			"isBackground": false
+		},
+		{
+			"label": "Generate trusted certificate using mkcert path",
+			"type": "shell",
+			"command": "$mk = \"$env:LOCALAPPDATA\\Microsoft\\WinGet\\Packages\\FiloSottile.mkcert_Microsoft.Winget.Source_8wekyb3d8bbwe\\mkcert.exe\"; New-Item -ItemType Directory -Force -Path .\\certs | Out-Null; & $mk -install; & $mk -key-file .\\certs\\local.key -cert-file .\\certs\\local.crt localhost 127.0.0.1 192.168.0.103",
+			"isBackground": false
+		},
+		{
+			"label": "Generate trusted certificate using mkcert path",
+			"type": "shell",
+			"command": "$mk = Join-Path $env:LOCALAPPDATA 'Microsoft\\WinGet\\Packages\\FiloSottile.mkcert_Microsoft.Winget.Source_8wekyb3d8bbwe\\mkcert.exe'; New-Item -ItemType Directory -Force -Path .\\certs | Out-Null; & $mk -install; & $mk -key-file .\\certs\\local.key -cert-file .\\certs\\local.crt localhost 127.0.0.1 192.168.0.103",
+			"isBackground": false
+		},
+		{
+			"label": "Generate trusted certificate via cmd",
+			"type": "shell",
+			"command": "cmd /c \"setlocal && set MKCERT=%LOCALAPPDATA%\\Microsoft\\WinGet\\Packages\\FiloSottile.mkcert_Microsoft.Winget.Source_8wekyb3d8bbwe\\mkcert.exe && mkdir .\\certs 2>nul && %MKCERT% -install && %MKCERT% -key-file .\\certs\\local.key -cert-file .\\certs\\local.crt localhost 127.0.0.1 192.168.0.103\"",
+			"isBackground": false
+		},
+		{
+			"label": "Print mkcert path with PowerShell",
+			"type": "shell",
+			"command": "$mk = Join-Path $env:LOCALAPPDATA 'Microsoft\\WinGet\\Packages\\FiloSottile.mkcert_Microsoft.Winget.Source_8wekyb3d8bbwe\\mkcert.exe'; Write-Output $mk; Test-Path $mk",
+			"isBackground": false
+		},
+		{
+			"label": "Create trusted local certificate",
+			"type": "shell",
+			"command": "$mk = Join-Path $env:LOCALAPPDATA 'Microsoft\\WinGet\\Packages\\FiloSottile.mkcert_Microsoft.Winget.Source_8wekyb3d8bbwe\\mkcert.exe'; New-Item -ItemType Directory -Force -Path .\\certs | Out-Null; & $mk -install; & $mk -key-file .\\certs\\local.key -cert-file .\\certs\\local.crt localhost 127.0.0.1 192.168.0.103",
+			"isBackground": false
+		},
+		{
+			"label": "Verify port 3001 is free",
+			"type": "shell",
+			"command": "netstat -ano | findstr :3001",
+			"isBackground": false
+		},
+		{
+			"label": "Stop current HTTPS server",
+			"type": "shell",
+			"command": "taskkill /F /PID 30640",
+			"isBackground": false
+		},
+		{
+			"label": "Start Next.js with custom HTTPS cert",
+			"type": "shell",
+			"command": "Set-Location 'c:\\Users\\lianj\\Desktop\\coding is not cold'; node .\\node_modules\\next\\dist\\bin\\next dev --hostname 0.0.0.0 --port 3001 --experimental-https-key .\\certs\\local.key --experimental-https-cert .\\certs\\local.crt",
+			"isBackground": true
+		},
+		{
+			"label": "Probe HTTPS endpoint with curl",
+			"type": "shell",
+			"command": "curl -vk https://localhost:3001/ --max-time 10",
+			"isBackground": false
+		},
+		{
+			"label": "Probe HTTPS endpoint with curl.exe",
+			"type": "shell",
+			"command": "curl.exe -vk https://localhost:3001/ --max-time 10",
+			"isBackground": false
+		},
+		{
+			"label": "Validate certificate and key files in Node",
+			"type": "shell",
+			"command": "node -e \"const fs=require('fs'); const crypto=require('crypto'); const cert=fs.readFileSync('.\\\\certs\\\\local.crt','utf8'); const key=fs.readFileSync('.\\\\certs\\\\local.key','utf8'); try { crypto.createPrivateKey(key); const x509=new crypto.X509Certificate(cert); console.log('cert-ok', x509.subjectAltName); } catch (e) { console.error('error', e.message); process.exitCode=1; }\"",
+			"isBackground": false
+		},
+		{
+			"label": "Probe HTTP endpoint with curl.exe",
+			"type": "shell",
+			"command": "curl.exe -i http://localhost:3001/ --max-time 10",
+			"isBackground": false
+		},
+		{
+			"label": "Restart Next.js with experimental HTTPS enabled",
+			"type": "shell",
+			"command": "taskkill /F /PID 30640; Set-Location 'c:\\Users\\lianj\\Desktop\\coding is not cold'; node .\\node_modules\\next\\dist\\bin\\next dev --hostname 0.0.0.0 --port 3001 --experimental-https --experimental-https-key .\\certs\\local.key --experimental-https-cert .\\certs\\local.crt",
+			"isBackground": true
+		},
+		{
+			"label": "Find process on port 3001",
+			"type": "shell",
+			"command": "netstat -ano | findstr :3001",
+			"isBackground": false
+		},
+		{
+			"label": "Kill pid 47200",
+			"type": "shell",
+			"command": "taskkill /F /PID 47200",
+			"isBackground": false
+		},
+		{
+			"label": "Start HTTPS server with custom cert",
+			"type": "shell",
+			"command": "Set-Location 'c:\\Users\\lianj\\Desktop\\coding is not cold'; node .\\node_modules\\next\\dist\\bin\\next dev --hostname 0.0.0.0 --port 3001 --experimental-https --experimental-https-key .\\certs\\local.key --experimental-https-cert .\\certs\\local.crt",
+			"isBackground": true
+		},
+		{
+			"label": "Test HTTPS endpoint after restart",
+			"type": "shell",
+			"command": "curl.exe -k -i https://localhost:3001/ --max-time 10",
+			"isBackground": false
+		},
+		{
+			"label": "Build verification",
+			"type": "shell",
+			"command": "npm run build",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Build verification (cmd)",
+			"type": "shell",
+			"command": "cmd /c npm run build",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			]
+		}
+	]
+}
