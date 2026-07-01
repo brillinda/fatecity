@@ -407,7 +407,7 @@ function LockedScreen({ onUnlock }: { onUnlock: () => void }) {
           </p>
           <div className="fate-locked-box">
             <p className="locked-red-title">{'📕 小红书搜：'}<span>{'命定城市'}</span></p>
-            <p className="locked-red-desc">{'购买后获得解锁码，输入即可无限测试'}</p>
+            <p className="locked-red-desc">{'购买后获得解锁码，输入即可无限测试。例：FATE2025'}</p>
             <button className="fate-btn primary" onClick={onUnlock} style={{ marginBottom: 12 }}>
               {'🔑 输入解锁码'}
             </button>
