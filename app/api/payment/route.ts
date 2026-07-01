@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
     // 模拟生成订单
     const orderId = `FATE${Date.now()}${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-    const amount = 1.23; // 元
+    const amount = 0.88; // 元
 
     console.log(`[支付] 新订单: ${orderId}, 方式: ${paymentMethod}, 金额: ¥${amount}`);
 

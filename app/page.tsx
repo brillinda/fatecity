@@ -253,7 +253,7 @@ function HeroSection({ phase, personality }: { phase: Phase; personality: QuizRe
           <div className="fate-hero-stats">
             <div className="hero-stat"><strong>64</strong><span>全球城市</span></div>
             <div className="hero-stat"><strong>8</strong><span>人格类型</span></div>
-            <div className="hero-stat"><strong>1.23元</strong><span>解锁完整报告</span></div>
+            <div className="hero-stat"><strong>0.88元</strong><span>解锁完整报告</span></div>
           </div>
         </div>
         <div className="fate-hero-visual">
@@ -406,7 +406,7 @@ function PreviewPhase({
                 最佳出行月份、深度城市画像。
               </p>
               <button className="fate-btn primary" onClick={onUnlock}>
-                ¥1.23 解锁完整报告
+                ¥0.88 解锁完整报告
               </button>
               <button className="fate-btn text" onClick={onShare}>
                 📤 先分享卡片，免费解锁备选城市
@@ -463,7 +463,7 @@ function PaymentModal({
           </p>
         </div>
         <div className="fate-price-row">
-          <span className="fate-price">¥1.23</span>
+          <span className="fate-price">¥0.88</span>
           <span className="fate-price-note">一次购买，永久查看</span>
         </div>
         <div className="fate-pay-options">
@@ -471,22 +471,21 @@ function PaymentModal({
           <button className="fate-pay-btn"><span className="pay-icon">💙</span><span>支付宝</span></button>
         </div>
         <div className="fate-qr-box">
-          {paying ? (
-            <div className="fate-paying-anim">
-              <div className="spinner" />
-              <p>支付处理中…</p>
-            </div>
-          ) : (
-            <div className="fate-qr-placeholder">
-              <div className="qr-code-sim"><div className="qr-pattern" /></div>
-              <p className="qr-note">扫码支付 ¥1.23</p>
-            </div>
-          )}
+          <img
+            src="/qrcode.png"
+            alt="收款码"
+            className="fate-qr-real"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+          <p className="qr-note">扫码支付 ¥0.88</p>
+          <p className="qr-note-sub">支付完成后请截图保存</p>
         </div>
-        <button className="fate-btn primary full" onClick={onPay} disabled={paying}>
-          {paying ? '处理中…' : '✅ 模拟支付（开发模式）'}
+        <button className="fate-btn primary full" onClick={onPay}>
+          我已完成支付，解锁报告
         </button>
-        <p className="fate-dev-note">💡 正式上线时替换为真实微信/支付宝支付接口</p>
+        <p className="fate-dev-note">💡 请将微信/支付宝收款码保存为 public/qrcode.png</p>
       </div>
     </div>
   );
@@ -829,7 +828,7 @@ function ShareCardOverlay({
             </div>
             <div className="share-card-footer">
               <span>扫码测测你的命定城市</span>
-              <span className="share-card-price">¥1.23</span>
+              <span className="share-card-price">¥0.88</span>
             </div>
           </div>
         </div>

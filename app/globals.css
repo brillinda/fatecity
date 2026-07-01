@@ -554,6 +554,24 @@ img {
   text-align: center;
 }
 
+/* Real QR code */
+.fate-qr-real {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto 12px;
+  display: block;
+  border-radius: var(--radius-sm);
+  border: 2px solid rgba(31,29,26,0.08);
+  object-fit: contain;
+  background: #fff;
+}
+
+.qr-note-sub {
+  font-size: 0.76rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
 .qr-code-sim {
   width: 180px;
   height: 180px;
