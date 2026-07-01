@@ -21,9 +21,22 @@ import {
   type FriendMatchResult
 } from './utils/matching';
 
-type Phase = 'quiz' | 'preview' | 'payment' | 'result' | 'friend';
+type Phase = 'quiz' | 'locked' | 'result' | 'friend';
 
 const CATEGORY_ORDER: CityCategory[] = ['settle', 'sojourn', 'solo', 'exchange'];
+const MAX_USES = 2;
+const STORAGE_KEY_USED = 'fatecity_used';
+
+function getUsedCount(): number {
+  if (typeof window === 'undefined') return 0;
+  return parseInt(localStorage.getItem(STORAGE_KEY_USED) || '0', 10);
+}
+
+function incrementUsed(): number {
+  const next = getUsedCount() + 1;
+  localStorage.setItem(STORAGE_KEY_USED, String(next));
+  return next;
+}
 
 // ======================== Main Component ========================
 export default function QuizPage() {
@@ -31,13 +44,11 @@ export default function QuizPage() {
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [result, setResult] = useState<QuizResult | null>(null);
   const [expandedCity, setExpandedCity] = useState<string | null>(null);
-  const [showPayModal, setShowPayModal] = useState(false);
-  const [paying, setPaying] = useState(false);
   const [showShareCard, setShowShareCard] = useState(false);
-  const [unlockedAlt, setUnlockedAlt] = useState(false);
   const [friendMode, setFriendMode] = useState(false);
   const [friendResult, setFriendResult] = useState<QuizResult | null>(null);
   const [friendMatch, setFriendMatch] = useState<FriendMatchResult | null>(null);
+  const [usedCount, setUsedCount] = useState(0);
   const resultRef = useRef<HTMLDivElement>(null);
   const shareCardRef = useRef<HTMLDivElement>(null);
 
@@ -45,8 +56,14 @@ export default function QuizPage() {
   const allAnswered = answeredCount === QUESTIONS.length;
   const progress = Math.round((answeredCount / QUESTIONS.length) * 100);
 
-  // Restore saved result on mount
+  // Check usage on mount
   useEffect(() => {
+    const count = getUsedCount();
+    setUsedCount(count);
+    if (count >= MAX_USES) {
+      setPhase('locked');
+      return;
+    }
     const saved = loadResult();
     if (saved) {
       setResult(saved);
@@ -58,50 +75,30 @@ export default function QuizPage() {
     setAnswers((prev) => ({ ...prev, [questionId]: index }));
   }, []);
 
-  // Complete quiz → go to preview
+  // Complete quiz → direct result
   const handleComplete = () => {
     if (!allAnswered) return;
     const matched = matchCities(answers);
     setResult(matched);
     saveResult(matched);
-    setPhase('preview');
-    setTimeout(() => {
-      resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-  };
-
-  // Payment
-  const handleUnlock = () => {
-    setShowPayModal(true);
-  };
-
-  const handlePayment = async () => {
-    setPaying(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setPaying(false);
-    setShowPayModal(false);
+    const newCount = incrementUsed();
+    setUsedCount(newCount);
     setPhase('result');
     setTimeout(() => {
       resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
   };
 
-  // Share → unlock alternative cities
+  // Share
   const handleShare = () => {
     setShowShareCard(true);
-    // Simulate share - in production, use Web Share API or generate image
-    setTimeout(() => {
-      setUnlockedAlt(true);
-    }, 800);
   };
 
   // Friend matching
   const handleStartFriendMatch = () => {
     setFriendMode(true);
     const saved = loadFriendResult();
-    if (saved) {
-      setFriendResult(saved);
-    }
+    if (saved) setFriendResult(saved);
   };
 
   const handleFriendTestComplete = () => {
@@ -117,7 +114,6 @@ export default function QuizPage() {
     setPhase('quiz');
     setExpandedCity(null);
     setShowShareCard(false);
-    setUnlockedAlt(false);
     setFriendMode(false);
     setFriendResult(null);
     setFriendMatch(null);
@@ -127,12 +123,18 @@ export default function QuizPage() {
     }
   };
 
+  const remaining = MAX_USES - usedCount;
   const personality = result?.personality ?? null;
 
   return (
     <main className="fate-shell">
+      {/* ===== Locked Screen ===== */}
+      {phase === 'locked' && <LockedScreen />}
+
       {/* ===== Hero ===== */}
-      <HeroSection phase={phase} personality={personality} />
+      {phase !== 'locked' && (
+        <HeroSection phase={phase} personality={personality} remaining={remaining} />
+      )}
 
       {/* ===== Progress Bar ===== */}
       {phase === 'quiz' && (
@@ -162,7 +164,7 @@ export default function QuizPage() {
             onClick={handleComplete}
             disabled={!allAnswered}
           >
-            {allAnswered ? '✨ 查看我的城市人格' : `还差 ${QUESTIONS.length - answeredCount} 题`}
+            {allAnswered ? `✨ 查看我的城市人格（剩余 ${remaining} 次）` : `还差 ${QUESTIONS.length - answeredCount} 题`}
           </button>
           {answeredCount > 0 && (
             <button className="fate-btn ghost" onClick={handleReset}>
@@ -172,39 +174,20 @@ export default function QuizPage() {
         </div>
       )}
 
-      {/* ===== Preview Phase (Free) ===== */}
-      {phase === 'preview' && result && (
-        <PreviewPhase
-          result={result}
-          onUnlock={handleUnlock}
-          onShare={handleShare}
-          resultRef={resultRef}
-        />
-      )}
-
-      {/* ===== Payment Modal ===== */}
-      {showPayModal && (
-        <PaymentModal
-          paying={paying}
-          onPay={handlePayment}
-          onClose={() => setShowPayModal(false)}
-        />
-      )}
-
-      {/* ===== Full Result Phase (Paid) ===== */}
+      {/* ===== Full Result ===== */}
       {phase === 'result' && result && (
         <FullResult
           result={result}
           answers={answers}
           expandedCity={expandedCity}
           setExpandedCity={setExpandedCity}
-          unlockedAlt={unlockedAlt}
           showShareCard={showShareCard}
           onShare={handleShare}
           onStartFriendMatch={handleStartFriendMatch}
           onReset={handleReset}
           shareCardRef={shareCardRef}
           resultRef={resultRef}
+          remaining={remaining}
         />
       )}
 
@@ -235,7 +218,7 @@ export default function QuizPage() {
 
 // ======================== Sub-Components ========================
 
-function HeroSection({ phase, personality }: { phase: Phase; personality: QuizResult['personality'] | null }) {
+function HeroSection({ phase, personality, remaining }: { phase: Phase; personality: QuizResult['personality'] | null; remaining?: number }) {
   if (phase === 'quiz') {
     return (
       <section className="fate-hero">
@@ -253,7 +236,7 @@ function HeroSection({ phase, personality }: { phase: Phase; personality: QuizRe
           <div className="fate-hero-stats">
             <div className="hero-stat"><strong>64</strong><span>全球城市</span></div>
             <div className="hero-stat"><strong>8</strong><span>人格类型</span></div>
-            <div className="hero-stat"><strong>0.88元</strong><span>解锁完整报告</span></div>
+            <div className="hero-stat"><strong>{remaining ?? 2}次</strong><span>免费测试</span></div>
           </div>
         </div>
         <div className="fate-hero-visual">
@@ -274,7 +257,7 @@ function HeroSection({ phase, personality }: { phase: Phase; personality: QuizRe
     );
   }
 
-  if (personality && (phase === 'preview' || phase === 'result')) {
+  if (personality && phase === 'result') {
     return (
       <section className="fate-hero fate-hero-result">
         <div className="fate-hero-text">
@@ -359,137 +342,41 @@ function QuestionCard({
   );
 }
 
-// ======================== Preview Phase ========================
-function PreviewPhase({
-  result,
-  onUnlock,
-  onShare,
-  resultRef
-}: {
-  result: QuizResult;
-  onUnlock: () => void;
-  onShare: () => void;
-  resultRef: React.Ref<HTMLDivElement>;
-}) {
-  const topPick = result.topPicks[0];
-  const personality = result.personality;
+
+// ======================== Locked Screen ========================
+function LockedScreen() {
+  const handleCopy = async () => {
+    const shareText = '\u{1f30d} \u6211\u521a\u6d4b\u4e86\u547d\u5b9a\u57ce\u5e02\uff0c\u53d1\u73b0\u6211\u7684\u57ce\u5e02\u4eba\u683c\u8d85\u51c6\uff01\n64\u5ea7\u57ce\u5e02\u00b78\u79cd\u4eba\u683c\u00b720\u9053\u9898\n\u4f60\u4e5f\u6765\u6d4b\u6d4b\uff1f https://fatecity.cn';
+    try {
+      await navigator.clipboard.writeText(shareText);
+      alert('\u2705 \u94fe\u63a5\u5df2\u590d\u5236\uff01\u53bb\u5c0f\u7ea2\u4e66\u5206\u4eab\u7ed9\u670b\u53cb\u5427~');
+    } catch { alert(shareText); }
+  };
 
   return (
-    <div ref={resultRef} className="fate-preview">
-      {/* Personality reveal first */}
-      <section className="fate-preview-card">
-        <div className="preview-personality">
-          <span className="chip large">{personality.emoji} {personality.label}型人格</span>
-          <h2>{personality.definition}</h2>
-        </div>
-
-        <div className="preview-teaser">
-          <div className="preview-city-img" style={{ backgroundImage: `url(${topPick.image})` }}>
-            <div className="preview-img-blur-info">
-              <h3>{topPick.countryFlag} {topPick.name}</h3>
-              <div className="preview-tags">
-                {topPick.tags.slice(0, 3).map((t) => (
-                  <span key={t} className="preview-tag">{t}</span>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="preview-blur-overlay">
-            <div className="preview-lock-content">
-              <span className="lock-icon">🔐</span>
-              <p className="lock-title">你已经完成了 90%</p>
-              <p className="lock-desc">
-                想知道<strong>哪座城市最懂你</strong>吗？
-                <br />
-                解锁完整答案：3 个私人定制理由、隐藏小店推荐、
-                <br />
-                最佳出行月份、深度城市画像。
-              </p>
-              <button className="fate-btn primary" onClick={onUnlock}>
-                ¥0.88 解锁完整报告
-              </button>
-              <button className="fate-btn text" onClick={onShare}>
-                📤 先分享卡片，免费解锁备选城市
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Personality distribution sneak peek */}
-      <section className="fate-mini-dist">
-        <h3>你的城市人格分布</h3>
-        <div className="fate-distribution">
-          {CATEGORY_ORDER.map((cat) => {
-            const prof = PERSONALITY_MAP[cat];
-            return (
-              <div key={cat} className="fate-dist-item">
-                <div className="fate-dist-label">
-                  <span>{prof.emoji}</span>
-                  <span>{prof.label}</span>
-                </div>
-                <div className="fate-dist-bar-wrap">
-                  <div className={`fate-dist-bar ${prof.colorClass}`} style={{ width: `${result.distribution[cat]}%` }} />
-                </div>
-                <span className="fate-dist-pct">{result.distribution[cat]}%</span>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-    </div>
-  );
-}
-
-// ======================== Payment Modal ========================
-function PaymentModal({
-  paying,
-  onPay,
-  onClose
-}: {
-  paying: boolean;
-  onPay: () => void;
-  onClose: () => void;
-}) {
-  return (
-    <div className="fate-overlay" onClick={onClose}>
-      <div className="fate-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="fate-modal-close" onClick={onClose}>✕</button>
-        <div className="fate-modal-header">
-          <span className="chip">🔐 解锁完整报告</span>
-          <h2>你的命定城市分析</h2>
-          <p className="fate-modal-desc">
-            包含「为什么适合你」的 3 点理由、本地人推荐的 3 家隐藏小店、最佳出行月份、深度城市画像
+    <main className="fate-shell">
+      <section className="fate-hero" style={{ textAlign: 'center' }}>
+        <div className="fate-hero-text" style={{ maxWidth: 520, margin: '0 auto' }}>
+          <span className="chip large">{'\u{1f512} \u6d4b\u8bd5\u6b21\u6570\u5df2\u7528\u5b8c'}</span>
+          <h1 className="fate-title fate-title-sm" style={{ marginTop: 20 }}>
+            {'\u4f60\u5df2\u7ecf\u53d1\u73b0\u81ea\u5df1\u7684'}<br /><span className="text-accent">{'\u57ce\u5e02\u4eba\u683c'}</span>{'\u4e86\u5417\uff1f'}
+          </h1>
+          <p className="fate-subtitle">
+            {'\u6bcf\u4eba\u9650\u6d4b 2 \u6b21\u3002\u5982\u9700\u66f4\u591a\u6d4b\u8bd5\u6b21\u6570\uff0c\u8bf7\u524d\u5f80\u5c0f\u7ea2\u4e66\u641c\u7d22\u300c\u547d\u5b9a\u57ce\u5e02\u300d\u8d2d\u4e70\u3002'}
           </p>
+          <div className="fate-locked-box">
+            <p className="locked-red-title">{'\u{1f4d5} \u5c0f\u7ea2\u4e66\u641c\uff1a'}<span>{'\u547d\u5b9a\u57ce\u5e02'}</span></p>
+            <p className="locked-red-desc">{'\u9650\u65f6\u4f18\u60e0\uff0c\u6d4b\u5b8c\u8fd8\u80fd\u548c\u597d\u53cb\u5339\u914d\u6700\u9002\u5408\u4e00\u8d77\u65c5\u884c\u7684\u57ce\u5e02'}</p>
+            <button className="fate-btn primary" onClick={handleCopy}>
+              {'\u{1f4cb} \u590d\u5236\u94fe\u63a5\u5206\u4eab\u7ed9\u670b\u53cb\uff08\u670b\u53cb\u53ef\u514d\u8d39\u6d4b 2 \u6b21\uff09'}
+            </button>
+          </div>
         </div>
-        <div className="fate-price-row">
-          <span className="fate-price">¥0.88</span>
-          <span className="fate-price-note">一次购买，永久查看</span>
-        </div>
-        <div className="fate-pay-options">
-          <button className="fate-pay-btn active"><span className="pay-icon">💚</span><span>微信支付</span></button>
-          <button className="fate-pay-btn"><span className="pay-icon">💙</span><span>支付宝</span></button>
-        </div>
-        <div className="fate-qr-box">
-          <img
-            src="/qrcode.png"
-            alt="收款码"
-            className="fate-qr-real"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
-          />
-          <p className="qr-note">扫码支付 ¥0.88</p>
-          <p className="qr-note-sub">支付完成后请截图保存</p>
-        </div>
-        <button className="fate-btn primary full" onClick={onPay}>
-          我已完成支付，解锁报告
-        </button>
-        <p className="fate-dev-note">💡 请将微信/支付宝收款码保存为 public/qrcode.png</p>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
+
 
 // ======================== Full Result ========================
 function FullResult({
@@ -497,7 +384,6 @@ function FullResult({
   answers,
   expandedCity,
   setExpandedCity,
-  unlockedAlt,
   showShareCard,
   onShare,
   onStartFriendMatch,
@@ -509,10 +395,10 @@ function FullResult({
   answers: Record<string, number>;
   expandedCity: string | null;
   setExpandedCity: (id: string | null) => void;
-  unlockedAlt: boolean;
   showShareCard: boolean;
   onShare: () => void;
   onStartFriendMatch: () => void;
+  remaining?: number;
   onReset: () => void;
   shareCardRef: React.Ref<HTMLDivElement>;
   resultRef: React.Ref<HTMLDivElement>;

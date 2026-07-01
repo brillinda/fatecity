@@ -628,6 +628,32 @@ img {
   margin-top: 12px;
 }
 
+/* ======================== Locked Screen ======================== */
+.fate-locked-box {
+  background: linear-gradient(135deg, rgba(44,93,78,0.06), rgba(199,154,76,0.06));
+  border-radius: var(--radius);
+  padding: 28px;
+  margin-top: 24px;
+  border: 1px solid rgba(31,29,26,0.08);
+}
+
+.locked-red-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.locked-red-title span {
+  color: var(--accent);
+}
+
+.locked-red-desc {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0 0 16px;
+  line-height: 1.7;
+}
+
 /* ======================== Results ======================== */
 .fate-results {
   display: flex;
