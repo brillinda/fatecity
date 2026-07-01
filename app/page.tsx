@@ -387,32 +387,32 @@ function QuestionCard({
 // ======================== Locked Screen ========================
 function LockedScreen({ onUnlock }: { onUnlock: () => void }) {
   const handleCopy = () => {
-    const shareText = '\ud83c\udf0d \u6211\u521a\u6d4b\u4e86\u547d\u5b9a\u57ce\u5e02\uff0c\u53d1\u73b0\u6211\u7684\u57ce\u5e02\u4eba\u683c\u8d85\u51c6\uff01\n64\u5ea7\u57ce\u5e02\u00b78\u79cd\u4eba\u683c\u00b720\u9053\u9898\n\u4f60\u4e5f\u6765\u6d4b\u6d4b\uff1f https://fatecity.cn';
+    const shareText = '🌍 我刚测了命定城市，发现我的城市人格超准！\n64座城市·8种人格·20道题\n你也来测测？ https://fatecity.cn';
     try {
       navigator.clipboard.writeText(shareText);
-      alert('\u2705 \u94fe\u63a5\u5df2\u590d\u5236\uff01\u53d1\u7ed9\u670b\u53cb\u4e00\u8d77\u6d4b\u5427~');
-    } catch { prompt('\u590d\u5236\u94fe\u63a5\uff1a', shareText); }
+      alert('✅ 链接已复制！发给朋友一起测吧~');
+    } catch { prompt('复制链接：', shareText); }
   };
 
   return (
     <main className="fate-shell">
       <section className="fate-hero" style={{ textAlign: 'center' as const }}>
         <div className="fate-hero-text" style={{ maxWidth: 520, margin: '0 auto' }}>
-          <span className="chip large">\ud83d\udd12 \u6b21\u6570\u5df2\u7528\u5b8c</span>
+          <span className="chip large">{'🔒 次数已用完'}</span>
           <h1 className="fate-title fate-title-sm" style={{ marginTop: 20 }}>
-            \u4f60\u8fd8\u60f3\u63a2\u7d22\u66f4\u591a<br /><span className="text-accent">\u547d\u5b9a\u57ce\u5e02</span>\u5417\uff1f
+            {'你还想探索更多'}<br /><span className="text-accent">{'命定城市'}</span>{'吗？'}
           </h1>
           <p className="fate-subtitle">
-            \u514d\u8d39\u6b21\u6570\u5df2\u7528\u5b8c\u3002\u524d\u5f80\u5c0f\u7ea2\u4e66\u641c\u7d22\u300c\u547d\u5b9a\u57ce\u5e02\u300d\u8d2d\u4e70\u89e3\u9501\u7801\uff0c\u5373\u53ef\u65e0\u9650\u6b21\u6d4b\u8bd5\u3002
+            {'免费次数已用完。前往小红书搜索「命定城市」购买解锁码，即可无限次测试。'}
           </p>
           <div className="fate-locked-box">
-            <p className="locked-red-title">\ud83d\udcd5 \u5c0f\u7ea2\u4e66\u641c\uff1a<span>\u547d\u5b9a\u57ce\u5e02</span></p>
-            <p className="locked-red-desc">\u8d2d\u4e70\u540e\u83b7\u5f97\u89e3\u9501\u7801\uff0c\u8f93\u5165\u5373\u53ef\u65e0\u9650\u6d4b\u8bd5</p>
+            <p className="locked-red-title">{'📕 小红书搜：'}<span>{'命定城市'}</span></p>
+            <p className="locked-red-desc">{'购买后获得解锁码，输入即可无限测试'}</p>
             <button className="fate-btn primary" onClick={onUnlock} style={{ marginBottom: 12 }}>
-              \ud83d\udd11 \u8f93\u5165\u89e3\u9501\u7801
+              {'🔑 输入解锁码'}
             </button>
             <button className="fate-btn secondary" onClick={handleCopy}>
-              \ud83d\udccb \u590d\u5236\u94fe\u63a5\u5206\u4eab\u7ed9\u670b\u53cb\uff08\u670b\u53cb\u53ef\u514d\u8d39\u6d4b\uff09
+              {'📋 复制链接分享给朋友（朋友可免费测）'}
             </button>
           </div>
         </div>
@@ -420,7 +420,6 @@ function LockedScreen({ onUnlock }: { onUnlock: () => void }) {
     </main>
   );
 }
-
 
 // ======================== Full Result ========================
 function FullResult({
