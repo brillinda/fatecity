@@ -386,34 +386,33 @@ function QuestionCard({
 
 // ======================== Locked Screen ========================
 function LockedScreen({ onUnlock }: { onUnlock: () => void }) {
-  const handleCopy = async () => {
+  const handleCopy = () => {
     const shareText = '\ud83c\udf0d \u6211\u521a\u6d4b\u4e86\u547d\u5b9a\u57ce\u5e02\uff0c\u53d1\u73b0\u6211\u7684\u57ce\u5e02\u4eba\u683c\u8d85\u51c6\uff01\n64\u5ea7\u57ce\u5e02\u00b78\u79cd\u4eba\u683c\u00b720\u9053\u9898\n\u4f60\u4e5f\u6765\u6d4b\u6d4b\uff1f https://fatecity.cn';
     try {
-      await navigator.clipboard.writeText(shareText);
-      alert('\u2705 \u94fe\u63a5\u5df2\u590d\u5236\uff01\u53bb\u5c0f\u7ea2\u4e66\u5206\u4eab\u7ed9\u670b\u53cb\u5427~');
-    } catch { alert(shareText); }
+      navigator.clipboard.writeText(shareText);
+      alert('\u2705 \u94fe\u63a5\u5df2\u590d\u5236\uff01\u53d1\u7ed9\u670b\u53cb\u4e00\u8d77\u6d4b\u5427~');
+    } catch { prompt('\u590d\u5236\u94fe\u63a5\uff1a', shareText); }
   };
 
   return (
     <main className="fate-shell">
-      <section className="fate-hero" style={{ textAlign: 'center' }}>
+      <section className="fate-hero" style={{ textAlign: 'center' as const }}>
         <div className="fate-hero-text" style={{ maxWidth: 520, margin: '0 auto' }}>
-          <span className="chip large">\ud83d\udd12 \u6d4b\u8bd5\u6b21\u6570\u5df2\u7528\u5b8c</span>
+          <span className="chip large">\ud83d\udd12 \u6b21\u6570\u5df2\u7528\u5b8c</span>
           <h1 className="fate-title fate-title-sm" style={{ marginTop: 20 }}>
-            \u4f60\u5df2\u7ecf\u53d1\u73b0\u81ea\u5df1\u7684<br /><span className="text-accent">\u57ce\u5e02\u4eba\u683c</span>\u4e86\u5417\uff1f
+            \u4f60\u8fd8\u60f3\u63a2\u7d22\u66f4\u591a<br /><span className="text-accent">\u547d\u5b9a\u57ce\u5e02</span>\u5417\uff1f
           </h1>
           <p className="fate-subtitle">
-            \u6bcf\u4eba\u9650\u6d4b 2 \u6b21\u3002\u5982\u9700\u66f4\u591a\u6d4b\u8bd5\u6b21\u6570\uff0c\u8bf7\u524d\u5f80\u5c0f\u7ea2\u4e66\u641c\u7d22\u300c\u547d\u5b9a\u57ce\u5e02\u300d\u8d2d\u4e70\u3002
+            \u514d\u8d39\u6b21\u6570\u5df2\u7528\u5b8c\u3002\u524d\u5f80\u5c0f\u7ea2\u4e66\u641c\u7d22\u300c\u547d\u5b9a\u57ce\u5e02\u300d\u8d2d\u4e70\u89e3\u9501\u7801\uff0c\u5373\u53ef\u65e0\u9650\u6b21\u6d4b\u8bd5\u3002
           </p>
           <div className="fate-locked-box">
             <p className="locked-red-title">\ud83d\udcd5 \u5c0f\u7ea2\u4e66\u641c\uff1a<span>\u547d\u5b9a\u57ce\u5e02</span></p>
-            <p className="locked-red-desc">\u9650\u65f6\u4f18\u60e0\uff0c\u8d2d\u4e70\u540e\u83b7\u5f97\u89e3\u9501\u7801\uff0c\u5373\u53ef\u65e0\u9650\u6b21\u6d4b\u8bd5</p>
+            <p className="locked-red-desc">\u8d2d\u4e70\u540e\u83b7\u5f97\u89e3\u9501\u7801\uff0c\u8f93\u5165\u5373\u53ef\u65e0\u9650\u6d4b\u8bd5</p>
             <button className="fate-btn primary" onClick={onUnlock} style={{ marginBottom: 12 }}>
               \ud83d\udd11 \u8f93\u5165\u89e3\u9501\u7801
             </button>
-            <br />
             <button className="fate-btn secondary" onClick={handleCopy}>
-              \ud83d\udccb \u590d\u5236\u94fe\u63a5\u5206\u4eab\u7ed9\u670b\u53cb
+              \ud83d\udccb \u590d\u5236\u94fe\u63a5\u5206\u4eab\u7ed9\u670b\u53cb\uff08\u670b\u53cb\u53ef\u514d\u8d39\u6d4b\uff09
             </button>
           </div>
         </div>
